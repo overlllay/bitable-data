@@ -1,15 +1,15 @@
 package com.harmony.bitable.core
 
 import com.harmony.bitable.convert.BitableConverter
+import com.harmony.bitable.filter.RecordFilterPredicate
 import com.harmony.bitable.mapping.BitableMappingContext
 import com.harmony.bitable.mapping.BitablePersistentEntity
 import com.harmony.bitable.mapping.BitablePersistentProperty
-import com.harmony.bitable.oapi.BitableRecordApi
-import com.harmony.bitable.oapi.RecordNotFoundException
-import com.harmony.bitable.oapi.iterable
-import com.harmony.bitable.oapi.stream
+import com.harmony.bitable.oapi.*
 import com.harmony.lark.LarkException
+import com.harmony.lark.model.PageCursor
 import com.lark.oapi.service.bitable.v1.model.AppTableRecord
+import com.lark.oapi.service.bitable.v1.model.ListAppTableRecordReq
 import org.springframework.util.ClassUtils
 
 class BitableTemplate(
@@ -135,12 +135,31 @@ class BitableTemplate(
     }
 
     override fun <T : Any> findAll(type: Class<T>): Iterable<T> {
-        val persistentEntity: BitablePersistentEntity<T> = getPersistentEntity(type)
-        return recordApi
-            .list(persistentEntity.getBitableAddress())
-            .iterable {
-                convertToEntity(it, persistentEntity)
-            }
+        return scan(type).iterable()
+    }
+
+    override fun <T : Any> findAll(type: Class<T>, predicate: RecordFilterPredicate): Iterable<T> {
+        return scan(type, predicate).iterable()
+    }
+
+    override fun <T : Any> scan(type: Class<T>): PageCursor<T> {
+        val persistentEntity = getPersistentEntity(type)
+        return recordApi.list(persistentEntity.getBitableAddress()).convert { convertToEntity(it, persistentEntity) }
+    }
+
+    override fun <T : Any> scan(type: Class<T>, predicate: RecordFilterPredicate): PageCursor<T> {
+        val persistentEntity = getPersistentEntity(type)
+        val address = persistentEntity.getBitableAddress()
+        val request = ListAppTableRecordReq().apply {
+            this.pageToken = predicate.getPageToken()
+            this.viewId = predicate.getViewId()
+            this.filter = predicate.getFilter()
+            this.sort = predicate.getSort()
+            this.fieldNames = predicate.getFieldNames()
+            this.tableId = address.tableId
+            this.appToken = address.appToken
+        }
+        return recordApi.list(request).convert { convertToEntity(it, persistentEntity) }
     }
 
     private fun <T : Any> findByRecordId(recordId: String, persistentEntity: BitablePersistentEntity<T>): T? {

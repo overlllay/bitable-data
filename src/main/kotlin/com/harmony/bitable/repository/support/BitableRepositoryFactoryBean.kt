@@ -11,7 +11,7 @@ import org.springframework.data.repository.core.RepositoryMetadata
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport
 import org.springframework.data.repository.core.support.RepositoryFactorySupport
 
-class BitableRepositoryFactoryBean<T : BitableRepository<S, ID>, S, ID>(
+class BitableRepositoryFactoryBean<T : BitableRepository<S, ID>, S : Any, ID>(
     repositoryInterface: Class<T>,
     private val bitableOperations: BitableOperations,
     private val mappingContext: BitableMappingContext,

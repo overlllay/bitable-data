@@ -6,6 +6,7 @@ import com.harmony.bitable.annotations.Bitdex
 import com.harmony.bitable.annotations.Bitfield
 import com.lark.oapi.service.bitable.v1.model.Attachment
 import com.lark.oapi.service.bitable.v1.model.Location
+import com.lark.oapi.service.bitable.v1.model.Person
 import com.lark.oapi.service.bitable.v1.model.Url
 import org.springframework.beans.BeanUtils
 import org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation
@@ -33,8 +34,10 @@ object BitityUtils {
         Character::class.java to TEXT,
         String::class.java to TEXT,
         Array<String>::class.java to MULTI_SELECT,
+        List::class.java to MULTI_SELECT,
 
         Number::class.java to NUMBER,
+        Double::class.java to NUMBER,
 
         Boolean::class.java to CHECKBOX,
 
@@ -43,7 +46,7 @@ object BitityUtils {
         LocalDateTime::class.java to DATE_TIME,
         YearMonth::class.java to DATE_TIME,
 
-        PERSON::class.java to PERSON,
+        Person::class.java to PERSON,
         Url::class.java to URL,
         Attachment::class.java to ATTACHMENT,
         Location::class.java to LOCATION

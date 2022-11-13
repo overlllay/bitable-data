@@ -10,7 +10,7 @@ import org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnot
 import org.springframework.data.mapping.model.Property
 import org.springframework.util.ClassUtils
 
-class SimpleBitityService : BitityService {
+internal class DefaultBitityService : BitityService {
 
     private val bitityCache = mutableMapOf<Class<*>, Bitity<*>>()
 
@@ -62,7 +62,7 @@ class SimpleBitityService : BitityService {
     private class BitityImpl<T : Any>(
         private val name: String,
         private val type: Class<T>,
-        fields: List<BitityField>,
+        private val fields: List<BitityField>,
     ) : Bitity<T> {
 
         private val fieldCache: Map<Property, BitityField> = fields.associateBy { it.property }
@@ -72,6 +72,12 @@ class SimpleBitityService : BitityService {
         override fun getType() = type
 
         override fun getField(property: Property) = fieldCache[property]
+
+        override fun getField(predicate: (BitityField) -> Boolean): BitityField? {
+            return fieldCache.values.firstOrNull(predicate)
+        }
+
+        override fun iterator(): Iterator<BitityField> = fields.iterator()
 
         override fun toString(): String {
             return "Bitity(name=$name, type=${type.simpleName})"

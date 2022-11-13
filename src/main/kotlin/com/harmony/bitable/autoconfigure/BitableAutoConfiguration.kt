@@ -1,7 +1,7 @@
 package com.harmony.bitable.autoconfigure
 
 import com.harmony.bitable.BitityService
-import com.harmony.bitable.SimpleBitityService
+import com.harmony.bitable.DefaultBitityService
 import com.harmony.bitable.convert.*
 import com.harmony.bitable.convert.MappingBitableConverter.Companion.DEFAULT_CONVERSION_SERVICE
 import com.harmony.bitable.core.BitableSource
@@ -33,7 +33,7 @@ class BitableAutoConfiguration(private val bitableProperties: BitableProperties)
 
     @Bean
     @ConditionalOnMissingBean(BitityService::class)
-    fun bitityService(): BitityService = SimpleBitityService()
+    fun bitityService(): BitityService = DefaultBitityService()
 
     @Bean
     @ConditionalOnBean(LarkClient::class)
