@@ -7,8 +7,8 @@ import org.springframework.data.util.Streamable
 import java.util.*
 
 class SimpleBitableRepository<T : Any, ID : Any>(
-    private val bitableOperations: BitableOperations,
     private val entityInformation: BitableEntityInformation<T, ID>,
+    private val bitableOperations: BitableOperations,
 ) : BitableRepository<T, ID> {
 
     override fun <S : T> save(entity: S) = bitableOperations.insert(entity)

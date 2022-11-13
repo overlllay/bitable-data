@@ -33,7 +33,7 @@ interface BitablePersistentEntity<T> : MutablePersistentEntity<T, BitablePersist
         if (field != null) {
             return field
         }
-        throw IllegalStateException(String.format("Required field %s not found for %s!", property.name, type))
+        throw IllegalStateException("Required field ${property.name} not found for ${name}!")
     }
 
 }

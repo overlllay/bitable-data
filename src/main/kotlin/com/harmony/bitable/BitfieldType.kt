@@ -1,43 +1,53 @@
 package com.harmony.bitable
 
-enum class BitfieldType(val value: Int) {
+import com.lark.oapi.service.bitable.v1.model.Attachment
+import com.lark.oapi.service.bitable.v1.model.Location
+import com.lark.oapi.service.bitable.v1.model.Person
+import com.lark.oapi.service.bitable.v1.model.Url
 
-    NONE(0),
+import java.time.LocalDateTime
 
-    TEXT(1),
+/**
+ * [飞书多维表格的字段类型](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/guide)
+ */
+enum class BitfieldType(val value: Int, val type: Class<*>) {
 
-    NUMBER(2),
+    NONE(0, Void::class.java),
 
-    SINGLE_SELECT(3),
+    TEXT(1, String::class.java),
 
-    MULTI_SELECT(4),
+    NUMBER(2, Number::class.java),
 
-    DATE_TIME(5),
+    SINGLE_SELECT(3, String::class.java),
 
-    CHECKBOX(7),
+    MULTI_SELECT(4, Array<String>::class.java),
 
-    USER(11),
+    DATE_TIME(5, LocalDateTime::class.java),
 
-    LINK(15),
+    CHECKBOX(7, Boolean::class.java),
 
-    ATTACHMENT(17),
+    PERSON(11, Person::class.java),
 
-    ASSOCIATION(18),
+    URL(15, Url::class.java),
 
-    FORMULA(20),
+    ATTACHMENT(17, Attachment::class.java),
 
-    CREATED_AT(1001),
+    ASSOCIATION(18, String::class.java),
 
-    UPDATED_AT(1002),
+    FORMULA(20, String::class.java),
 
-    CREATED_BY(1003),
+    CREATED_AT(1001, Double::class.java),
 
-    UPDATED_BY(1004),
+    UPDATED_AT(1002, Double::class.java),
 
-    AUTO_SERIAL(1005),
+    CREATED_BY(1003, PERSON::class.java),
 
-    PHONE_NUMBER(13),
+    UPDATED_BY(1004, PERSON::class.java),
 
-    LOCATION(22);
+    AUTO_SERIAL(1005, String::class.java),
+
+    PHONE_NUMBER(13, String::class.java),
+
+    LOCATION(22, Location::class.java);
 
 }

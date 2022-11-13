@@ -2,7 +2,6 @@ package com.harmony.bitable.mapping
 
 import com.harmony.bitable.BitityService
 import com.harmony.bitable.core.BitableSource
-import com.harmony.bitable.BitfieldValue
 import org.springframework.data.mapping.context.AbstractMappingContext
 import org.springframework.data.mapping.model.Property
 import org.springframework.data.mapping.model.SimpleTypeHolder
@@ -37,7 +36,7 @@ internal class BitableMappingContextImpl(
     private class BitableSimpleTypeHolder : SimpleTypeHolder(emptySet(), true) {
 
         override fun isSimpleType(type: Class<*>): Boolean {
-            if (BitfieldValue::class.java.isAssignableFrom(type)) {
+            if (type.name.startsWith("com.lark.oapi.service.bitable.v1.model")) {
                 return true
             }
             return super.isSimpleType(type)

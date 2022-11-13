@@ -1,14 +1,16 @@
 package com.harmony.bitable.utils
 
-import com.harmony.bitable.annotations.Bitfield
-import com.harmony.bitable.model.Attachment
-import com.harmony.bitable.model.Link
-import com.harmony.bitable.model.User
 import com.harmony.bitable.BitfieldType
 import com.harmony.bitable.BitfieldType.*
+import com.harmony.bitable.annotations.Bitdex
+import com.harmony.bitable.annotations.Bitfield
+import com.lark.oapi.service.bitable.v1.model.Attachment
+import com.lark.oapi.service.bitable.v1.model.Location
+import com.lark.oapi.service.bitable.v1.model.Url
 import org.springframework.beans.BeanUtils
 import org.springframework.core.annotation.AnnotatedElementUtils.getMergedAnnotation
 import org.springframework.core.annotation.AnnotationUtils
+import org.springframework.data.annotation.Id
 import org.springframework.data.mapping.model.Property
 import org.springframework.data.util.ClassTypeInformation
 import org.springframework.data.util.Optionals
@@ -30,6 +32,7 @@ object BitityUtils {
     private val DEFAULT_TYPE_MAPPING = mapOf(
         Character::class.java to TEXT,
         String::class.java to TEXT,
+        Array<String>::class.java to MULTI_SELECT,
 
         Number::class.java to NUMBER,
 
@@ -40,19 +43,24 @@ object BitityUtils {
         LocalDateTime::class.java to DATE_TIME,
         YearMonth::class.java to DATE_TIME,
 
-        User::class.java to USER,
-        Link::class.java to LINK,
-        Attachment::class.java to ATTACHMENT
+        PERSON::class.java to PERSON,
+        Url::class.java to URL,
+        Attachment::class.java to ATTACHMENT,
+        Location::class.java to LOCATION
     )
 
     private val DEFAULT_FIELD_FILTER: (Field) -> Boolean = {
         !Modifier.isStatic(it.modifiers)
                 && !Modifier.isFinal(it.modifiers)
-                && AnnotationUtils.findAnnotation(it, Bitfield::class.java) != null
+                && containsAny(it, Bitfield::class.java, Bitdex::class.java, Id::class.java)
     }
 
     private val DEFAULT_ANNOTATION_FILTER: (Annotation) -> Boolean = {
         it.annotationClass.java.name.startsWith("com.harmony.bitable.annotations")
+    }
+
+    private fun containsAny(field: Field, vararg annotations: Class<out Annotation>): Boolean {
+        return annotations.any { AnnotationUtils.findAnnotation(field, it) != null }
     }
 
     fun getTypeBitfieldType(type: Class<*>): BitfieldType? {

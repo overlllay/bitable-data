@@ -11,4 +11,6 @@ interface BitableConverter :
 
     override fun getMappingContext(): BitableMappingContext
 
+    fun addConverter(converter: BitfieldConverter)
+
 }
