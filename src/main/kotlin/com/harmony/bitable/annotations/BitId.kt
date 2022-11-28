@@ -1,6 +1,7 @@
 package com.harmony.bitable.annotations
 
 import com.lark.oapi.service.bitable.v1.model.AppTableRecord
+import org.springframework.data.annotation.Id
 import kotlin.annotation.AnnotationRetention.*
 import kotlin.annotation.AnnotationTarget.*
 
@@ -9,6 +10,7 @@ import kotlin.annotation.AnnotationTarget.*
  *
  * @see AppTableRecord.getRecordId
  */
+@Id
 @Target(FIELD, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER)
 @Retention(RUNTIME)
 annotation class BitId

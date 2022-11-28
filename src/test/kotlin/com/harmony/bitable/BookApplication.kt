@@ -1,6 +1,6 @@
-package com.harmony.bitable.example
+package com.harmony.bitable
 
-import com.harmony.bitable.example.domain.Book
+import com.harmony.bitable.domain.Book
 import com.harmony.bitable.repository.BitableRepository
 import com.harmony.bitable.repository.config.EnableBitableRepositories
 import org.slf4j.LoggerFactory

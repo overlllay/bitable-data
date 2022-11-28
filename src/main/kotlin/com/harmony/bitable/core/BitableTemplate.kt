@@ -1,11 +1,14 @@
 package com.harmony.bitable.core
 
 import com.harmony.bitable.convert.BitableConverter
-import com.harmony.bitable.filter.RecordFilterPredicate
+import com.harmony.bitable.filter.RecordFilter
 import com.harmony.bitable.mapping.BitableMappingContext
 import com.harmony.bitable.mapping.BitablePersistentEntity
 import com.harmony.bitable.mapping.BitablePersistentProperty
-import com.harmony.bitable.oapi.*
+import com.harmony.bitable.oapi.BitableRecordApi
+import com.harmony.bitable.oapi.RecordNotFoundException
+import com.harmony.bitable.oapi.convert
+import com.harmony.bitable.oapi.toIterable
 import com.harmony.lark.LarkException
 import com.harmony.lark.model.PageCursor
 import com.lark.oapi.service.bitable.v1.model.AppTableRecord
@@ -32,6 +35,16 @@ class BitableTemplate(
         return convertToEntity(insertedRecord, persistentEntity)
     }
 
+    override fun <T : Any> insertAll(objectsToInsert: Iterable<T>): Iterable<T> {
+        val records = toRecords(objectsToInsert)
+        if (records.isEmpty()) {
+            return emptyList()
+        }
+        val persistentEntity = records.persistentEntity!!
+        return recordApi.batchCreate(persistentEntity.getBitableAddress(), records.toList())
+            .map { convertToEntity(it, persistentEntity) }
+    }
+
     override fun <T : Any> update(objectToUpdate: T): T {
         val persistentEntity = getPersistentEntity(objectToUpdate)
 
@@ -45,6 +58,16 @@ class BitableTemplate(
         return updateById(id, objectToUpdate)
     }
 
+    override fun <T : Any> updateAll(objectsToUpdate: Iterable<T>): Iterable<T> {
+        val records = toRecords(objectsToUpdate)
+        if (records.isEmpty()) {
+            return emptyList()
+        }
+
+        val persistentEntity = records.persistentEntity!!
+        return recordApi.batchUpdate(persistentEntity.getBitableAddress(), records.toList())
+            .map { convertToEntity(it, persistentEntity) }
+    }
 
     private fun <T : Any> updateById(id: Any, objectToUpdate: T): T {
         val persistentEntity = getPersistentEntity(objectToUpdate)
@@ -74,7 +97,7 @@ class BitableTemplate(
         val persistentEntity = getPersistentEntity(type)
 
         val cursor = recordApi.list(persistentEntity.getBitableAddress())
-        for (record in cursor.stream()) {
+        for (record in cursor) {
             deleteByRecord(record, persistentEntity)
         }
     }
@@ -94,6 +117,15 @@ class BitableTemplate(
     }
 
     override fun <T : Any> delete(id: Any, type: Class<T>) = deleteById(id, getPersistentEntity(type))
+
+    override fun <T : Any> deleteAll(objectsToDelete: Iterable<T>): Map<String, Boolean> {
+        val records = toRecords(objectsToDelete)
+        if (records.isEmpty()) {
+            return emptyMap()
+        }
+        val persistentEntity = records.persistentEntity!!
+        return recordApi.batchDelete(persistentEntity.getBitableAddress(), records.map { it.recordId })
+    }
 
     private fun <T : Any> deleteById(id: Any, persistentEntity: BitablePersistentEntity<T>): T {
 
@@ -135,11 +167,11 @@ class BitableTemplate(
     }
 
     override fun <T : Any> findAll(type: Class<T>): Iterable<T> {
-        return scan(type).iterable()
+        return scan(type).toIterable()
     }
 
-    override fun <T : Any> findAll(type: Class<T>, predicate: RecordFilterPredicate): Iterable<T> {
-        return scan(type, predicate).iterable()
+    override fun <T : Any> findAll(type: Class<T>, recordFilter: RecordFilter): Iterable<T> {
+        return scan(type, recordFilter).toIterable()
     }
 
     override fun <T : Any> scan(type: Class<T>): PageCursor<T> {
@@ -147,15 +179,16 @@ class BitableTemplate(
         return recordApi.list(persistentEntity.getBitableAddress()).convert { convertToEntity(it, persistentEntity) }
     }
 
-    override fun <T : Any> scan(type: Class<T>, predicate: RecordFilterPredicate): PageCursor<T> {
+    override fun <T : Any> scan(type: Class<T>, recordFilter: RecordFilter): PageCursor<T> {
         val persistentEntity = getPersistentEntity(type)
         val address = persistentEntity.getBitableAddress()
         val request = ListAppTableRecordReq().apply {
-            this.pageToken = predicate.getPageToken()
-            this.viewId = predicate.getViewId()
-            this.filter = predicate.getFilter()
-            this.sort = predicate.getSort()
-            this.fieldNames = predicate.getFieldNames()
+            this.pageSize = recordFilter.getPageSize()
+            this.pageToken = recordFilter.getPageToken()
+            this.viewId = recordFilter.getViewId()
+            this.filter = recordFilter.getFilter()
+            this.sort = recordFilter.getSort()
+            this.fieldNames = recordFilter.getFieldNames()
             this.tableId = address.tableId
             this.appToken = address.appToken
         }
@@ -182,9 +215,23 @@ class BitableTemplate(
         return mappingContext.getPersistentEntity(cls) as BitablePersistentEntity<R>
     }
 
-    private fun <R> getPersistentEntity(obj: R): BitablePersistentEntity<R> {
-        val entityType = if (obj is Class<*>) obj else ClassUtils.getUserClass(obj as Any)
+    private fun <R : Any> getPersistentEntity(obj: R): BitablePersistentEntity<R> {
+        val entityType = getEntityType(obj)
         return mappingContext.getPersistentEntity(entityType) as BitablePersistentEntity<R>
+    }
+
+    private fun <T : Any> toRecords(objects: Iterable<T>): Records<T> {
+        val entities = objects.toList()
+        if (entities.isEmpty()) {
+            return Records(null)
+        }
+
+        val entityType = getEntityType(entities[0])
+        if (entities.any { getEntityType(it) == entityType }) {
+            throw IllegalStateException("not allow multiple type entity iterable")
+        }
+        val persistentEntity = getPersistentEntity(entityType as Class<T>)
+        return Records(persistentEntity, entities.map { convertToRecord(it) })
     }
 
     private fun <R> convertToRecord(obj: R): AppTableRecord {
@@ -195,6 +242,23 @@ class BitableTemplate(
 
     private fun <R> convertToEntity(record: AppTableRecord, persistentEntity: BitablePersistentEntity<R>): R {
         return converter.read(persistentEntity.type, record)
+    }
+
+    private fun getEntityType(obj: Any): Class<*> {
+        return if (obj is Class<*>)
+            ClassUtils.getUserClass(obj)
+        else
+            ClassUtils.getUserClass(obj)
+    }
+
+    private data class Records<T>(
+        val persistentEntity: BitablePersistentEntity<T>?,
+        private val list: List<AppTableRecord> = emptyList(),
+    ) : Iterable<AppTableRecord> {
+        override fun iterator(): Iterator<AppTableRecord> = list.iterator()
+
+        fun isEmpty() = list.isEmpty()
+
     }
 
 }

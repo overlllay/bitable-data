@@ -1,4 +1,4 @@
-package com.harmony.bitable.example.domain
+package com.harmony.bitable.domain
 
 import com.harmony.bitable.BitfieldType
 import com.harmony.bitable.annotations.BitId

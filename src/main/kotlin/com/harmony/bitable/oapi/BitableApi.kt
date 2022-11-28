@@ -37,7 +37,7 @@ class BitableApi(larkClient: LarkClient, private val pageSize: Int = 20) {
             .tableId(tableId)
             .pageSize(pageSize)
             .build()
-        return appTableField.listCursor(request).stream().toList()
+        return appTableField.listCursor(request).toList()
     }
 
     private fun getAppTable(appToken: String, predicate: (AppTable) -> Boolean): AppTable? {
@@ -45,7 +45,7 @@ class BitableApi(larkClient: LarkClient, private val pageSize: Int = 20) {
             this.appToken = appToken
             this.pageSize = this@BitableApi.pageSize
         }
-        return appTable.listCursor(request).stream().firstOrNull(predicate)
+        return appTable.listCursor(request).toStream().firstOrNull(predicate)
     }
 
 }

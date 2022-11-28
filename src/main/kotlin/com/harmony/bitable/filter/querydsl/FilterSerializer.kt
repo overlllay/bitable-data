@@ -1,6 +1,7 @@
 package com.harmony.bitable.filter.querydsl
 
 import com.harmony.bitable.filter.NameProvider
+import com.harmony.bitable.model.Option
 import com.querydsl.core.support.SerializerBase
 import com.querydsl.core.types.Path
 import com.querydsl.core.types.PathType
@@ -47,6 +48,9 @@ class FilterSerializer(
     private fun serializeSingleValue(value: Any?): String {
         if (value == null) {
             return ""
+        }
+        if (value is Option) {
+            return value.getText()
         }
         return value.toString().replace("\"", "\\\"")
     }

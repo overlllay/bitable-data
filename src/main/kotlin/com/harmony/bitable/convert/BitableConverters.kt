@@ -11,6 +11,7 @@ import org.springframework.core.convert.converter.Converter
 import org.springframework.core.convert.support.DefaultConversionService
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.util.*
 
@@ -20,6 +21,8 @@ object BitableConverters {
         val conversionService = DefaultConversionService()
         conversionService.addConverter(DoubleToLocalDateTime())
         conversionService.addConverter(DoubleToLocalDate())
+        conversionService.addConverter(LocalDateTimeToDouble())
+        conversionService.addConverter(LocalDateToDouble())
         conversionService.addConverter(MapToAttachment())
         conversionService.addConverter(MapToUser())
         conversionService.addConverter(MapToUrl())
@@ -42,6 +45,18 @@ object BitableConverters {
     private class DoubleToLocalDate : Converter<Double, LocalDate> {
         override fun convert(source: Double): LocalDate {
             return Date(source.toLong()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+        }
+    }
+
+    private class LocalDateToDouble : Converter<LocalDate, Double> {
+        override fun convert(source: LocalDate): Double {
+            return source.atTime(LocalTime.MIN).atZone(ZoneId.systemDefault()).toEpochSecond().toDouble()
+        }
+    }
+
+    private class LocalDateTimeToDouble : Converter<LocalDateTime, Double> {
+        override fun convert(source: LocalDateTime): Double {
+            return source.atZone(ZoneId.systemDefault()).toEpochSecond().toDouble()
         }
     }
 

@@ -26,35 +26,15 @@ class RecordFilterBuilder<T : Any>(private val rootType: Class<T>) {
         init(this.predicateBuilder)
     }
 
-    fun build(nameProvider: NameProvider = FilterBuilder.buildNameProvider(rootType)): RecordFilterPredicate {
+    fun build(nameProvider: NameProvider = FilterBuilder.buildNameProvider(rootType)): RecordFilter {
         val filter = this.predicateBuilder.build(nameProvider)
-        return InternalRecordFilterPredicate(
+        return SimpleRecordFilter(
             filter = filter,
             pageToken = null,
             fieldNames = null,
             viewId = null,
             sort = null
         )
-
-    }
-
-    internal data class InternalRecordFilterPredicate(
-        private val filter: String,
-        private val pageToken: String?,
-        private val fieldNames: String?,
-        private val viewId: String?,
-        private val sort: String?,
-    ) : RecordFilterPredicate {
-
-        override fun getPageToken(): String? = pageToken
-
-        override fun getFieldNames(): String? = fieldNames
-
-        override fun getViewId(): String? = viewId
-
-        override fun getFilter(): String = filter
-
-        override fun getSort(): String? = sort
 
     }
 
@@ -166,8 +146,8 @@ class PredicateBuilder<T : Any> internal constructor(
         return first.build()
     }
 
-    fun build(nameProvider: NameProvider = FilterBuilder.buildNameProvider(rootType)): String {
-        val predicate = buildPredicate() ?: throw IllegalStateException("empty filter block")
+    fun build(nameProvider: NameProvider = FilterBuilder.buildNameProvider(rootType)): String? {
+        val predicate = buildPredicate() ?: return null
         val serializer = FilterSerializer(nameProvider)
         predicate.accept(serializer, null)
         return serializer.toString()

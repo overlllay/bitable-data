@@ -9,6 +9,8 @@ import java.time.LocalDateTime
 
 /**
  * [飞书多维表格的字段类型](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/guide)
+ * @param value 飞书多维表格的值
+ * @param type 提交飞书服务时的目标值类型
  */
 enum class BitfieldType(val value: Int, val type: Class<*>) {
 
@@ -26,7 +28,7 @@ enum class BitfieldType(val value: Int, val type: Class<*>) {
 
     CHECKBOX(7, Boolean::class.java),
 
-    PERSON(11, Person::class.java),
+    PERSON(11, Array<Person>::class.java),
 
     URL(15, Url::class.java),
 
@@ -40,9 +42,9 @@ enum class BitfieldType(val value: Int, val type: Class<*>) {
 
     UPDATED_AT(1002, Double::class.java),
 
-    CREATED_BY(1003, PERSON::class.java),
+    CREATED_BY(1003, Person::class.java),
 
-    UPDATED_BY(1004, PERSON::class.java),
+    UPDATED_BY(1004, Person::class.java),
 
     AUTO_SERIAL(1005, String::class.java),
 
