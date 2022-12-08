@@ -4,41 +4,89 @@ import com.harmony.bitable.filter.Criteria.Companion.AND
 import com.harmony.bitable.filter.Criteria.Companion.OR
 import com.harmony.bitable.filter.Criteria.Companion.buildFromSource
 import com.harmony.bitable.filter.querydsl.FilterSerializer
+import com.lark.oapi.core.utils.Jsons
 import com.querydsl.core.types.Predicate
 import com.querydsl.kotlin.and
 import com.querydsl.kotlin.or
+import org.springframework.data.domain.Sort.Direction
 import kotlin.reflect.KMutableProperty1
 
 class RecordFilterBuilder<T : Any>(private val rootType: Class<T>) {
 
     private val root: BitfieldPathBuilder<T> = BitfieldPathBuilder(rootType, rootType.simpleName)
 
-    private val names: MutableList<NameInformation<*>> = mutableListOf()
+    private var selections: List<NameInformation<*>>? = null
 
-    private lateinit var predicateBuilder: PredicateBuilder<T>
+    private var predicateBuilder: PredicateBuilder<T>? = null
+
+    private var orderByBuilder: OrderByBuilder<T>? = null
+
+    private var customizerBuilder: CustomizerBuilder? = null
 
     fun select(vararg names: KMutableProperty1<T, *>) {
-        names.map { NameInformation.from(it) }.forEach { this.names.add(it) }
+        this.selections = names.map { NameInformation.from(it) }
     }
 
     fun where(init: PredicateBuilder<T>.() -> Unit) {
-        this.predicateBuilder = PredicateBuilder(rootType, root)
-        init(this.predicateBuilder)
+        val predicateBuilder = PredicateBuilder(rootType, root)
+        init(predicateBuilder)
+        this.predicateBuilder = predicateBuilder
+    }
+
+    fun orderBy(init: OrderByBuilder<T>.() -> Unit) {
+        val orderByBuilder = OrderByBuilder<T>()
+        init(orderByBuilder)
+        this.orderByBuilder = orderByBuilder
+    }
+
+    fun customize(init: CustomizerBuilder.() -> Unit) {
+        val customizerBuilder = CustomizerBuilder()
+        init(customizerBuilder)
+        this.customizerBuilder = customizerBuilder
     }
 
     fun build(nameProvider: NameProvider = FilterBuilder.buildNameProvider(rootType)): RecordFilter {
-        val filter = this.predicateBuilder.build(nameProvider)
+        val filter = predicateBuilder?.build(nameProvider)
+        val sort = orderByBuilder?.build(nameProvider)
+        val names = selections?.map { nameProvider.getFieldName(it) }
         return SimpleRecordFilter(
             filter = filter,
-            pageToken = null,
-            fieldNames = null,
-            viewId = null,
-            sort = null
+            pageToken = customizerBuilder?.pageToken,
+            fieldNames = if (names == null) null else Jsons.DEFAULT.toJson(names),
+            viewId = customizerBuilder?.viewId,
+            sort = sort
         )
-
     }
 
 }
+
+class CustomizerBuilder {
+
+    var pageToken: String? = null
+    var viewId: String? = null
+
+}
+
+class OrderByBuilder<T : Any> {
+
+    private val orders: MutableList<Order> = mutableListOf()
+
+    fun KMutableProperty1<T, *>.desc() {
+        orders.add(Order(NameInformation.from(this), Direction.DESC))
+    }
+
+    fun KMutableProperty1<T, *>.asc() {
+        orders.add(Order(NameInformation.from(this), Direction.ASC))
+    }
+
+    internal fun build(nameProvider: NameProvider): String {
+        val orders: List<String> = orders.map { "${nameProvider.getFieldName(it.name)} ${it.direction}" }
+        return Jsons.DEFAULT.toJson(orders)
+    }
+
+}
+
+class Order(val name: NameInformation<*>, val direction: Direction)
 
 class PredicateBuilder<T : Any> internal constructor(
     private val rootType: Class<T>,
@@ -235,6 +283,10 @@ class Criteria(
         return predicate.toString()
     }
 
+}
+
+private fun NameProvider.getFieldName(name: NameInformation<*>): String {
+    return this.getFieldName(name.property.name)
 }
 
 inline fun <reified T : Any> recordFilter(init: RecordFilterBuilder<T>.() -> Unit): RecordFilterBuilder<T> {

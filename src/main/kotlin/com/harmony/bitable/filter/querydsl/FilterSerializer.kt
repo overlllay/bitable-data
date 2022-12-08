@@ -1,5 +1,9 @@
 package com.harmony.bitable.filter.querydsl
 
+import com.google.gson.GsonBuilder
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import com.harmony.bitable.filter.NameProvider
 import com.harmony.bitable.model.Option
 import com.querydsl.core.support.SerializerBase
@@ -9,7 +13,15 @@ import com.querydsl.core.types.SubQueryExpression
 
 class FilterSerializer(
     private val fieldNameProvider: NameProvider = NameProvider.identity(),
+    private val serializer: (Any) -> String? = { GSON.toJson(it) },
 ) : SerializerBase<FilterSerializer>(FilterTemplates.DEFAULT) {
+
+    companion object {
+        private val GSON =
+            GsonBuilder().registerTypeHierarchyAdapter(Option::class.java, OptionTypeAdapter())
+                .disableHtmlEscaping()
+                .create()
+    }
 
     override fun visit(expr: SubQueryExpression<*>, context: Void?): Void? = null
 
@@ -28,31 +40,19 @@ class FilterSerializer(
 
     override fun visitConstant(constant: Any?) {
         if (constant != null) {
-            append(serializeValue(constant))
+            append(serializer(constant))
         }
     }
 
-    protected fun serializeValue(value: Any): String {
-        if (value is Number) {
-            return value.toString()
+    private class OptionTypeAdapter : TypeAdapter<Option>() {
+        override fun write(writer: JsonWriter?, value: Option?) {
+            writer?.value(value?.getText())
         }
-        if (value is Array<*>) {
-            return value.joinToString(", ") { "\"" + serializeSingleValue(it) + "\"" }
-        }
-        if (value is Collection<*>) {
-            return value.joinToString(", ") { "\"" + serializeSingleValue(it) + "\"" }
-        }
-        return "\"${serializeSingleValue(value)}\""
-    }
 
-    private fun serializeSingleValue(value: Any?): String {
-        if (value == null) {
-            return ""
+        override fun read(reader: JsonReader?): Option {
+            throw UnsupportedOperationException("Unsupported read Option")
         }
-        if (value is Option) {
-            return value.getText()
-        }
-        return value.toString().replace("\"", "\\\"")
+
     }
 
 }

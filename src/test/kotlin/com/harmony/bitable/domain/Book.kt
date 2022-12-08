@@ -25,7 +25,7 @@ class Book {
     var price: Double = 0.0
 
     @Bitfield("标签")
-    var tags: List<String> = listOf()
+    var tags: List<BookCategory> = listOf()
 
     @Bitfield("出版时间")
     var publishedAt: LocalDateTime? = null

@@ -1,25 +1,21 @@
 package com.harmony.bitable
 
 import com.harmony.bitable.domain.Book
-import com.harmony.bitable.filter.filter
+import com.harmony.bitable.domain.BookCategory
+import com.harmony.bitable.filter.recordFilter
+import com.lark.oapi.core.utils.Jsons
 
 fun main() {
 
-    val filter0 = filter<Book> {
-        Book::name eq "三体" or (Book::author eq "刘慈欣")
-        or {
-            Book::introduction contains listOf("科技")
+    val filter = recordFilter {
+        select(Book::name)
+        where {
+            Book::tags contains BookCategory.XIAN_XIA
         }
+        orderBy { Book::name.desc() }
     }
 
-    println(filter0.build())
-
-    val filter1 = filter<Book> {
-        Book::name eq "三体" or (Book::author eq "刘慈欣")
-        Book::price gt 100.0 and (Book::price lt 200.0)
-    }
-
-    println(filter1.build())
-
+    val recordFilter = filter.build()
+    println(Jsons.DEFAULT.toJson(recordFilter))
 
 }

@@ -12,26 +12,7 @@ import org.springframework.stereotype.Repository
 
 @EnableBitableRepositories
 @SpringBootApplication
-class BookApplication {
-
-    private val log = LoggerFactory.getLogger(BookApplication::class.java)
-
-    @Bean
-    fun displayAll(bookRepository: BookRepository): CommandLineRunner {
-        return CommandLineRunner {
-
-            val cursor = bookRepository.scan {
-                Book::name contains "三体"
-            }
-
-            for (book in cursor) {
-                println("book: $book")
-            }
-
-        }
-    }
-
-}
+class BookApplication
 
 fun main(vararg args: String) {
     runApplication<BookApplication>(*args)

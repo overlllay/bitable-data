@@ -15,6 +15,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mapping.model.Property
 import org.springframework.data.util.ClassTypeInformation
 import org.springframework.data.util.Optionals
+import org.springframework.data.util.TypeInformation
 import org.springframework.util.ClassUtils
 import org.springframework.util.ReflectionUtils
 import java.lang.reflect.AnnotatedElement
@@ -82,7 +83,7 @@ object BitityUtils {
     fun getProperties(type: Class<*>, fieldFilter: (Field) -> Boolean = DEFAULT_FIELD_FILTER): List<Property> {
         val rawType = ClassUtils.getUserClass(type)
         val descriptors = BeanUtils.getPropertyDescriptors(rawType).associateBy { it.name }
-        val typeInformation = ClassTypeInformation.from(rawType)
+        val typeInformation = TypeInformation.of(rawType)
 
         val result = mutableListOf<Property>()
 
